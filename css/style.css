@@ -33,11 +33,66 @@ header{
     justify-content: space-between;
 }
 
+#tabs{
+    margin: 150px 50px 0;
+    display: flex;
+    display: -webkit-flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+#current-bidding h1{
+    display: inline;
+}
+
+#page-tab{
+    display: flex;
+    display: -webkit-flex;
+    list-style: none;
+    margin: 0 15px 0 0;
+}
+
+#page-tab li{
+    margin: 0 2px;
+    padding: 5px 10px;
+    background-color: var(--dark-green);
+    color: var(--white);
+}
+
+#page-tab #active-page{
+    background-color: var(--light-green);
+    color: var(--dark-green);
+}
+
+#table-tabs{
+    margin-left: 15px;
+    display:flex;
+    display: -webkit-flex;
+}
+
+#table-tabs div{
+    background-color: var(--dark-green);
+    padding: 20px 10px 10px;
+    border-radius: 10px 10px 0 0;
+    border-bottom: #365A00;
+}
+
+#table-tabs #active-tab{
+    background-color: var(--grass-green);
+    border-bottom: 1px solid var(--dark-green);
+}
+
 #table-field{
-    margin: 150px 50px;
+    margin: 0 50px;
     display:flex;
     display:-webkit-flex;
     justify-content: center;
+}
+
+#page-tab{
+    display: flex;
+    display: -webkit-flex;
+
 }
 
 table{

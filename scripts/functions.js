@@ -4,8 +4,9 @@ const { METHODS } = require("http");
 const ExcelJS = require('exceljs');
 const colors = require('colors');
 
-const keywords = ['Telas', 'Tela', 'Material pedagogico', 'Gerenciamento', 'Gerenciamento eletronico', 'Pedagogico', 'Acessibilidade', 'TV Escola', 'TV Prefeitura',
-'Lousa Digital'];
+const tags = 
+['Telas', 'Tela', 'Material pedagogico', 'Gerenciamento', 'Gerenciamento eletronico', 'Pedagogico', 'Acessibilidade', 'TV Escola', 'TV Prefeitura',
+'Lousa Digital', 'Totem', 'Totem de senha', 'Senha', 'Tela interativa', 'Touchscreen'];
 
 //Number of tries if timeout
 const maxTries = 3;
@@ -101,6 +102,31 @@ module.exports.getJSON = (filename) =>{
     })
 }
 
+function removeAccents(str){
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, " ").toLowerCase();
+}
+
+async function getBiddingsFromElements(elem){
+    return await Promise.all(elem.map(item => item.evaluate(item => item.innerText)));
+}
+
+function inspectBiddings(biddings, keywords, approvedBiddings){
+    for(let bidding of biddings){
+        let wordsBidding = removeAccents(bidding).split(/\W+/);
+
+        for(let word of wordsBidding){
+            for(let keyword of keywords){
+                if(word === keyword){
+                    console.log("Achado uma licitação para com as palavras-chave.");
+                    approvedBiddings.push(bidding);
+                }
+            }
+        }
+    }
+
+    return approvedBiddings;
+}
+
 module.exports.getLondrinaBiddings = async () => {
     const page = await startPuppeteer("http://www1.londrina.pr.gov.br/sistemas/licita/index.php", "Londrina");
 
@@ -125,16 +151,27 @@ module.exports.getLondrinaBiddings = async () => {
 
                 await page.waitForNavigation();
 
-                const biddings = page.$$("p");
+                const elements = await page.$$("p");
 
-                console.log(biddings.length)
+                console.log('Iniciando busca das licitações compativeis.');
+
+                //Used to map every element found and return into a array
+                const allBiddings = await getBiddingsFromElements(elements);
+
+                var filteredBiddings = [];
+
+                filteredBiddings = inspectBiddings(allBiddings, tags, filteredBiddings);
+
+                if(filteredBiddings.length > 0){
+                    console.log(`Licitações compativeis encontradas: ${filteredBiddings.length}`.green)
+                }else{
+                    console.log(`Nenhuma licitação compatível encontrada ¯\\_(ツ)_/¯`)
+                }
             }
 
         }else{
             return console.log("Não encontrado botão, talvez o layout da pagina tenha alterado".red);
         }
-
-        page.click()
     }catch(err){
         console.error("ERRO: "+err);
     }

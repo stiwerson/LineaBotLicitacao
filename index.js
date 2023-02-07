@@ -1,4 +1,3 @@
-const puppeteer = require('puppeteer');
 const colors = require('colors');
 const functions = require('./scripts/functions');
 

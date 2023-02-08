@@ -46,6 +46,7 @@ const startPuppeteer = async function(url, siteName){
         }
     }
     console.error(`Erro na busca após ${maxTries} tentativas.`);
+    writeErrorLog('Não foi possível logar no site de ' + siteName);
 }
 
 //Saves info in the JSON
@@ -102,12 +103,45 @@ module.exports.getJSON = (filename) =>{
     })
 }
 
+function getCurrentDate() {
+    const date = new Date();
+    const day = date.getDate();
+    const month = date.getMonth() + 1;
+    const year = date.getFullYear();
+    return `${day}.${month}.${year}`;
+}
+
+async function writeErrorLog(message){
+    const date = await getCurrentDate();
+    fs.appendFile(`./arquivos/relatorios/ERROR ${date}.txt`, message, (err) =>{
+        if(err){
+            console.log("Não foi possivel escrever o erro no log: " + err);
+        }else{
+            console.log("Erro registrado com sucesso no log.")
+        }
+    })
+}
+  
+
 function removeAccents(str){
     return str.normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, " ").toLowerCase();
 }
 
 async function getBiddingsFromElements(elem){
     return await Promise.all(elem.map(item => item.evaluate(item => item.innerText)));
+}
+
+function getNoticeNumber(biddings){
+    const pattern = new RegExp(`\\d+/\\d+`);
+    let noticeNumbers = [];
+    let numberFound;
+
+    for(let bidding of biddings){
+        numberFound = bidding.match(pattern);
+        noticeNumbers.push(numberFound);
+    }
+    
+    return noticeNumbers
 }
 
 function inspectBiddings(biddings, keywords, approvedBiddings){
@@ -128,7 +162,7 @@ function inspectBiddings(biddings, keywords, approvedBiddings){
 }
 
 module.exports.getLondrinaBiddings = async () => {
-    const page = await startPuppeteer("http://www1.londrina.pr.gov.br/sistemas/licita/index.php", "Londrina");
+    const page = await startPuppeteer("http://www1.londrina.pr.gov.br/sistemas/licita/index.php", "londrina");
 
     try{
         //Click on the first window (Abertas)
@@ -164,15 +198,20 @@ module.exports.getLondrinaBiddings = async () => {
 
                 if(filteredBiddings.length > 0){
                     console.log(`Licitações compativeis encontradas: ${filteredBiddings.length}`.green)
+
+                    console.log('Salvando em uma planilha');
+
                 }else{
-                    console.log(`Nenhuma licitação compatível encontrada ¯\\_(ツ)_/¯`)
+                    console.log(`Nenhuma licitação compatível encontrada ¯\\_(ツ)_/¯`);
                 }
             }
 
         }else{
+            writeErrorLog('londrina: Não foi possível encontrar um botão de navegação, talvez o layout foi alterado.')
             return console.log("Não encontrado botão, talvez o layout da pagina tenha alterado".red);
         }
     }catch(err){
-        console.error("ERRO: "+err);
+        writeErrorLog('londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.')
+        console.error("ERRO: " + err);
     }
 }

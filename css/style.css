@@ -49,7 +49,7 @@ header{
     display: flex;
     display: -webkit-flex;
     list-style: none;
-    margin: 0 15px 0 0;
+    margin: auto 0 0 0;
 }
 
 #page-tab li{
@@ -57,11 +57,12 @@ header{
     padding: 5px 10px;
     background-color: var(--dark-green);
     color: var(--white);
+   border-bottom: 2px solid var(--dark-green);
 }
 
 #page-tab #active-page{
-    background-color: var(--light-green);
-    color: var(--dark-green);
+    background-color: var(--grass-green);
+    color: var(--light-green);
 }
 
 #table-tabs{
@@ -79,7 +80,7 @@ header{
 
 #table-tabs #active-tab{
     background-color: var(--grass-green);
-    border-bottom: 1px solid var(--dark-green);
+    border-bottom: 2px solid var(--dark-green);
 }
 
 #table-field{

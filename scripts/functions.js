@@ -1,12 +1,12 @@
 const puppeteer = require("puppeteer");
 const fs = require('fs');
 const { METHODS } = require("http");
-const ExcelJS = require('exceljs');
+const Excel = require('exceljs');
 const colors = require('colors');
 
 const tags = 
 ['Telas', 'Tela', 'Material pedagogico', 'Gerenciamento', 'Gerenciamento eletronico', 'Pedagogico', 'Acessibilidade', 'TV Escola', 'TV Prefeitura',
-'Lousa Digital', 'Totem', 'Totem de senha', 'Senha', 'Tela interativa', 'Touchscreen'];
+'Lousa Digital', 'Totem', 'Totem de senha', 'Senha', 'Tela interativa', 'Touchscreen', 'Gestao de conteudos', 'tenis'];
 
 //Number of tries if timeout
 const maxTries = 3;
@@ -70,22 +70,49 @@ function saveJSON(obj, filename){
 }
 
 //Saves info in the ExcelFile
-function saveSheet(obj, filename){
-    const json = JSON.stringify(obj);
-    
-    for(let tries = 0; tries < maxTries; tries++){
-        try{
-            fs.writeFile(`./public/${filename}.json`, json, (err) => {
-                if (err){
-                    throw err
-                }else{
-                    console.log(`${filename}.json foi salvo com sucesso`);
-                }
-            });
-            break;
-        }catch(error){
-            console.error(`ERRO:\n ${error}.\n Tentando novamente.\n (Tentativas ${tries+1}/${maxTries})`);
-        }
+function saveSheets(filePath){
+    const workbook = new Excel.Workbook();
+
+    //If sheet exist update
+    if(fs.existsSync(filePath)){
+        workbook.xlsx.readFile(filePath).
+        then(() =>{
+            //Get first worksheet
+            const worksheet = workbook.getWorksheet(1);
+
+            //TODO: Add info
+            //worksheet.addRow(['Info','Info'])
+
+            //Save
+            workbook.xlsx.writeFile(filePath)
+            .then(()=>{
+                console.log("Planilha salva em " + filePath);
+            })
+            .catch((error)=>{
+                console.log("Error: " + error)
+                writeErrorLog("Não foi possivel salvar a planilha");
+            })
+
+        }).catch((error)=>{
+            console.log("Error: " + error)
+            writeErrorLog("Não foi possivel escrever a planilha");
+        });
+    //Else create new one
+    }else{
+        const worksheet = workbook.addWorksheet('Sheet 1');
+
+        //TODO: Add info
+        //worksheet.addRow(['Info','Info'])
+
+        //Save
+        workbook.xlsx.writeFile(filePath)
+        .then(()=>{
+            console.log("Planilha salva em " + filePath);
+        })
+        .catch((error)=>{
+            console.log("Error: " + error)
+            writeErrorLog("Não foi possivel salvar a planilha");
+        })
     }
 }
 
@@ -103,6 +130,7 @@ module.exports.getJSON = (filename) =>{
     })
 }
 
+//Get the current date formated like dd/mm/yy
 function getCurrentDate() {
     const date = new Date();
     const day = date.getDate();
@@ -111,9 +139,10 @@ function getCurrentDate() {
     return `${day}.${month}.${year}`;
 }
 
+//Error log to register in arquivos/relatorios
 async function writeErrorLog(message){
     const date = await getCurrentDate();
-    fs.appendFile(`./arquivos/relatorios/ERROR ${date}.txt`, message, (err) =>{
+    fs.appendFile(`./arquivos/relatorios/ERROR ${date}.txt`, message+'\n', (err) =>{
         if(err){
             console.log("Não foi possivel escrever o erro no log: " + err);
         }else{
@@ -121,29 +150,36 @@ async function writeErrorLog(message){
         }
     })
 }
-  
 
 function removeAccents(str){
     return str.normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, " ").toLowerCase();
 }
 
+//List all biddings from elements
 async function getBiddingsFromElements(elem){
     return await Promise.all(elem.map(item => item.evaluate(item => item.innerText)));
 }
 
+//Regex to retrieve the notice number from a bidding
 function getNoticeNumber(biddings){
     const pattern = new RegExp(`\\d+/\\d+`);
     let noticeNumbers = [];
     let numberFound;
 
-    for(let bidding of biddings){
-        numberFound = bidding.match(pattern);
-        noticeNumbers.push(numberFound);
+    if(Array.isArray(biddings)){
+        for(let bidding of biddings){
+            numberFound = bidding.match(pattern);
+            noticeNumbers.push(numberFound[0]);
+        }
+    }else{
+        numberFound = biddings.match(pattern);
+        return numberFound[0];
     }
     
     return noticeNumbers
 }
 
+//Check which biddings are approved
 function inspectBiddings(biddings, keywords, approvedBiddings){
     for(let bidding of biddings){
         let wordsBidding = removeAccents(bidding).split(/\W+/);
@@ -151,7 +187,6 @@ function inspectBiddings(biddings, keywords, approvedBiddings){
         for(let word of wordsBidding){
             for(let keyword of keywords){
                 if(word === keyword){
-                    console.log("Achado uma licitação para com as palavras-chave.");
                     approvedBiddings.push(bidding);
                 }
             }
@@ -159,6 +194,18 @@ function inspectBiddings(biddings, keywords, approvedBiddings){
     }
 
     return approvedBiddings;
+}
+
+function gerarEdital(local){
+    return {
+        cidade: local,
+        objetos: [],
+        situacao: [],
+        datasAbertura: [],
+        editais: [],
+        anexos: [],
+        numEdital: []
+    }
 }
 
 module.exports.getLondrinaBiddings = async () => {
@@ -199,7 +246,37 @@ module.exports.getLondrinaBiddings = async () => {
                 if(filteredBiddings.length > 0){
                     console.log(`Licitações compativeis encontradas: ${filteredBiddings.length}`.green)
 
-                    console.log('Salvando em uma planilha');
+                    console.log('Pegando informações para colocar na planilha.');
+
+                    const edital = gerarEdital("Londrina");
+
+                    for(let item of filteredBiddings){
+                        console.log('antes do push');
+                        edital.objetos.push(item.split('\n')[1].split('Objeto: ')[1]);
+                        edital.situacao.push(item.split('\n')[2].split("Situação: ")[1]);
+                        edital.datasAbertura.push(item.split('\n')[3].split(" ")[1]);
+                        edital.numEdital.push(getNoticeNumber(item));
+
+                        //Find the correct button to get the notice
+                        const editalButton = await page.evaluateHandle(() => {
+                            console.log("Entrei no evaluate")
+                            const buttons = Array.from(document.querySelectorAll('p > a'));
+                            return buttons.find(button => button.textContent === item.split('\n')[0]);
+                        });
+                        
+                        page.eva
+
+                        await editalButton.click();
+                        await page.waitForNavigation();
+
+                        const editalLink = await page.evaluateHandle(() => {
+                            const buttons = Array.from(document.querySelectorAll('a'));
+                            return buttons.find(button => button.textContent.toLowerCase() === "edital e anexos");
+                        });
+
+                        console.log(editalLink);                        
+                    }
+
 
                 }else{
                     console.log(`Nenhuma licitação compatível encontrada ¯\\_(ツ)_/¯`);

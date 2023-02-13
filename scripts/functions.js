@@ -3,10 +3,12 @@ const fs = require('fs');
 const { METHODS } = require("http");
 const Excel = require('exceljs');
 const colors = require('colors');
+var browser;
 
 const tags = 
 ['Telas', 'Tela', 'Material pedagogico', 'Gerenciamento', 'Gerenciamento eletronico', 'Pedagogico', 'Acessibilidade', 'TV Escola', 'TV Prefeitura',
-'Lousa Digital', 'Totem', 'Totem de senha', 'Senha', 'Tela interativa', 'Touchscreen', 'Gestao de conteudos', 'tenis'];
+'Lousa Digital', 'Totem', 'Totem de senha', 'Senha', 'Tela interativa', 'Touchscreen', 'Gestao de conteudos', 'eletronicos', 'eletronico', 'televisores',
+ 'Display'];
 
 //Number of tries if timeout
 const maxTries = 3;
@@ -20,7 +22,7 @@ const startPuppeteer = async function(url, siteName){
         try{
             console.log("Procurando as licitações.");
             //Start Browser
-            const browser = await puppeteer.launch({ args: [
+            browser = await puppeteer.launch({ args: [
                 '--disable-gpu',
                 '--disable-setuid-sandbox',
                 '--no-sandbox',
@@ -45,28 +47,9 @@ const startPuppeteer = async function(url, siteName){
             console.error(`ERRO:\n ${error}.\n Tentando novamente.\n (Tentativas ${tries+1}/${maxTries})`);
         }
     }
+    await browser.close();
     console.error(`Erro na busca após ${maxTries} tentativas.`);
     writeErrorLog('Não foi possível logar no site de ' + siteName);
-}
-
-//Saves info in the JSON
-function saveJSON(obj, filename){
-    const json = JSON.stringify(obj);
-    
-    for(let tries = 0; tries < maxTries; tries++){
-        try{
-            fs.writeFile(`./public/${filename}.json`, json, (err) => {
-                if (err){
-                    throw err
-                }else{
-                    console.log(`${filename}.json foi salvo com sucesso`);
-                }
-            });
-            break;
-        }catch(error){
-            console.error(`ERRO:\n ${error}.\n Tentando novamente.\n (Tentativas ${tries+1}/${maxTries})`);
-        }
-    }
 }
 
 //Saves info in the ExcelFile
@@ -116,18 +99,41 @@ function saveSheets(filePath){
     }
 }
 
+//Saves info in the JSON
+function saveJSON(obj, filename){
+    const json = JSON.stringify(obj);
+    
+    for(let tries = 0; tries < maxTries; tries++){
+        try{
+            fs.writeFile(`./public/${filename}.json`, json, (err) => {
+                if (err){
+                    throw err
+                }else{
+                    console.log(`${filename}.json foi salvo com sucesso`);
+                }
+            });
+            break;
+        }catch(error){
+            console.error(`ERRO:\n ${error}.\n Tentando novamente.\n (Tentativas ${tries+1}/${maxTries})`);
+        }
+    }
+}
+
 //Get saved JSON
-module.exports.getJSON = (filename) =>{
+function getJSON(filename){
+    const filepath = `./arquivos/db/${filename}.json`;
+    
     return new Promise((resolve,reject) => {
-        fs.readFile(`./public/${filename}.json`, 'utf-8', (err, data)=>{
+        fs.readFile(filepath, 'utf-8', (err, data)=>{
             //If data not found returns a error on console log
             if(data){
                 resolve(JSON.parse(data));
             }else{
-                console.log("Error! " + err);
+                console.log(err);
+                resolve(undefined);
             }
         });
-    })
+    });
 }
 
 //Get the current date formated like dd/mm/yy
@@ -142,7 +148,7 @@ function getCurrentDate() {
 //Error log to register in arquivos/relatorios
 async function writeErrorLog(message){
     const date = await getCurrentDate();
-    fs.appendFile(`./arquivos/relatorios/ERROR ${date}.txt`, message+'\n', (err) =>{
+    fs.appendFile(`./arquivos/relatorios/ERROR ${date}.txt`, message+'\n\n', (err) =>{
         if(err){
             console.log("Não foi possivel escrever o erro no log: " + err);
         }else{
@@ -158,6 +164,30 @@ function removeAccents(str){
 //List all biddings from elements
 async function getBiddingsFromElements(elem){
     return await Promise.all(elem.map(item => item.evaluate(item => item.innerText)));
+}
+
+//Retrieve a link from a button (href)
+async function getLinkFromElements(elem){
+    return await elem.evaluate(element => element.href);
+}
+
+//Check if theres a duplicate notice
+async function compareDuplicatedBiddings(list, city){
+    const history = await getJSON('history');
+
+    let newList = [];
+
+    if(history && list){
+        const database = history[city].numEdital;
+
+        let allEditalNumbers = getNoticeNumber(list);
+
+        newList = allEditalNumbers.filter(item => !database.includes(item));
+    }else{
+        return list;
+    }
+
+    return newList;
 }
 
 //Regex to retrieve the notice number from a bidding
@@ -186,7 +216,7 @@ function inspectBiddings(biddings, keywords, approvedBiddings){
 
         for(let word of wordsBidding){
             for(let keyword of keywords){
-                if(word === keyword){
+                if(word === keyword.toLowerCase()){
                     approvedBiddings.push(bidding);
                 }
             }
@@ -196,9 +226,8 @@ function inspectBiddings(biddings, keywords, approvedBiddings){
     return approvedBiddings;
 }
 
-function gerarEdital(local){
-    return {
-        cidade: local,
+function gerarEdital(edital, local){
+    edital[local] = {
         objetos: [],
         situacao: [],
         datasAbertura: [],
@@ -241,54 +270,92 @@ module.exports.getLondrinaBiddings = async () => {
 
                 var filteredBiddings = [];
 
-                filteredBiddings = inspectBiddings(allBiddings, tags, filteredBiddings);
+                filteredBiddings = await inspectBiddings(allBiddings, tags, filteredBiddings);
+
+                //Check if isn't already on the database
+
+                filteredBiddings = await compareDuplicatedBiddings(filteredBiddings, "londrina");
 
                 if(filteredBiddings.length > 0){
                     console.log(`Licitações compativeis encontradas: ${filteredBiddings.length}`.green)
 
-                    console.log('Pegando informações para colocar na planilha.');
+                    console.log('Salvando informações, por favor aguarde...');
 
-                    const edital = gerarEdital("Londrina");
+                    const cidade = "londrina"
+
+                    const edital = {};
+
+                    await gerarEdital(edital, cidade);
 
                     for(let item of filteredBiddings){
-                        console.log('antes do push');
-                        edital.objetos.push(item.split('\n')[1].split('Objeto: ')[1]);
-                        edital.situacao.push(item.split('\n')[2].split("Situação: ")[1]);
-                        edital.datasAbertura.push(item.split('\n')[3].split(" ")[1]);
-                        edital.numEdital.push(getNoticeNumber(item));
+                        console.log(item);
+                        await page.waitForNavigation();
+
+                        edital[cidade].objetos.push(item.split('\n')[1].split('Objeto: ')[1]);
+                        edital[cidade].situacao.push(item.split('\n')[2].split("Situação: ")[1]);
+                        edital[cidade].datasAbertura.push(item.split('\n')[3].split(" ")[1]);
+                        edital[cidade].numEdital.push(getNoticeNumber(item));
+
+                        const pregao = item.split('\n')[0];
 
                         //Find the correct button to get the notice
-                        const editalButton = await page.evaluateHandle(() => {
-                            console.log("Entrei no evaluate")
+                        const editalButton = await page.evaluateHandle((pregao) => {
                             const buttons = Array.from(document.querySelectorAll('p > a'));
-                            return buttons.find(button => button.textContent === item.split('\n')[0]);
-                        });
+                            return buttons.find(button => button.textContent === pregao);
+                        }, pregao);
                         
-                        page.eva
-
                         await editalButton.click();
                         await page.waitForNavigation();
 
+                        console.log('bbbb');
+
+                        //Find the button that holds the link for anexo
                         const editalLink = await page.evaluateHandle(() => {
                             const buttons = Array.from(document.querySelectorAll('a'));
-                            return buttons.find(button => button.textContent.toLowerCase() === "edital e anexos");
+                            return buttons.find(element => element.textContent.toLowerCase() === "edital e anexos");
                         });
 
-                        console.log(editalLink);                        
+                        console.log("ccc")
+
+                        //retrive the link from a element
+                        if(editalLink){
+                            const link = await getLinkFromElements(editalLink)
+                        }
+
+                        edital[cidade].editais.push(link);
+                        edital[cidade].anexos.push("-");
+                        
+                        console.log(edital);
+
+                        const abertasButton = await page.$('.second-menu ul>li:nth-of-type(2) a');
+                        await abertasButton.click()
+
+                        await page.waitForNavigation();
+
+
+                        await page.waitForSelector('#filtroInterno input.botao');
+                        let filtrarBtn = await page.$('#filtroInterno input.botao');
+
+                        await filtrarBtn.click();
+                        await page.waitForNavigation();
                     }
 
+                    return console.log("Informações salvas com êxito (⌐■_■)");
 
                 }else{
-                    console.log(`Nenhuma licitação compatível encontrada ¯\\_(ツ)_/¯`);
+                    console.log(`Nenhuma licitação nova ou compatível encontrada ¯\\_(ツ)_/¯`);
                 }
             }
 
         }else{
-            writeErrorLog('londrina: Não foi possível encontrar um botão de navegação, talvez o layout foi alterado.')
+            writeErrorLog('londrina: Não foi possível encontrar um botão de navegação, talvez o layout foi alterado.');
             return console.log("Não encontrado botão, talvez o layout da pagina tenha alterado".red);
         }
     }catch(err){
-        writeErrorLog('londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.')
-        console.error("ERRO: " + err);
+        writeErrorLog('londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.\nError log:\n' + err)
+        console.error(err.red);
+    }finally{
+        console.log("Fechando o navegador");
+        await browser.close();
     }
 }

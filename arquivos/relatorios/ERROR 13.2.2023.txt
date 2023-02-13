@@ -1,0 +1,150 @@
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+TypeError: database is not iterable
+
+ERRO: Arquivo history.json não foi encontrado
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+TypeError: database is not iterable
+
+ERRO: Arquivo history.json não foi encontrado
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+TypeError: database is not iterable
+
+ERRO: Arquivo history.json não foi encontrado
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+TypeError: database is not iterable
+
+ERRO: Arquivo history.json não foi encontrado
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+TypeError: database is not iterable
+
+ERRO: Arquivo history.json não foi encontrado
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+TypeError: database is not iterable
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+Error: Execution context was destroyed, most likely because of a navigation.
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+TypeError: Cannot read properties of undefined (reading 'londrina')
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+TypeError: Cannot read properties of undefined (reading 'londrina')
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+ReferenceError: database is not defined
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+ReferenceError: database is not defined
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+ReferenceError: database is not defined
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+ReferenceError: database is not defined
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+TypeError: Cannot read properties of undefined (reading 'length')
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+TypeError: Cannot read properties of undefined (reading 'length')
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+TypeError: Cannot read properties of undefined (reading 'length')
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+TypeError: Cannot read properties of undefined (reading 'length')
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+TypeError: editalButton.click is not a function
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+TypeError: editalButton.click is not a function
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+TypeError: editalButton.click is not a function
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+TypeError: editalButton.click is not a function
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+Error: Execution context was destroyed, most likely because of a navigation.
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+Error: Execution context was destroyed, most likely because of a navigation.
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+TypeError: Cannot read properties of undefined (reading 'split')
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+Error: Execution context was destroyed, most likely because of a navigation.
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+Error: Execution context was destroyed, most likely because of a navigation.
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+Error: Execution context was destroyed, most likely because of a navigation.
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+Error: Execution context was destroyed, most likely because of a navigation.
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+Error: Execution context was destroyed, most likely because of a navigation.
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+Error: Execution context was destroyed, most likely because of a navigation.
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+Error: Execution context was destroyed, most likely because of a navigation.
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+Error: Execution context was destroyed, most likely because of a navigation.
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+Error: Execution context was destroyed, most likely because of a navigation.
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+Error: Execution context was destroyed, most likely because of a navigation.
+
+londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.
+Error log:
+TimeoutError: Navigation timeout of 30000 ms exceeded
+

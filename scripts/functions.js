@@ -105,7 +105,7 @@ function saveJSON(obj, filename){
     
     for(let tries = 0; tries < maxTries; tries++){
         try{
-            fs.writeFile(`./public/${filename}.json`, json, (err) => {
+            fs.writeFile(`./arquivos/db/${filename}.json`, json, (err) => {
                 if (err){
                     throw err
                 }else{
@@ -210,9 +210,9 @@ function getNoticeNumber(biddings){
 }
 
 //Check which biddings are approved
-function inspectBiddings(biddings, keywords, approvedBiddings){
+function inspectBiddingsLondrina(biddings, keywords, approvedBiddings){
     for(let bidding of biddings){
-        let wordsBidding = removeAccents(bidding).split(/\W+/);
+        let wordsBidding = removeAccents(bidding.split('\n')[1]).split(/\W+/);
 
         for(let word of wordsBidding){
             for(let keyword of keywords){
@@ -237,77 +237,99 @@ function gerarEdital(edital, local){
     }
 }
 
+async function saveBiddings(list, city, filename){
+    const file = await getJSON(filename);
+
+    if(file && list){
+        //Adding everything to history.json
+        file[city].objetos.push(...list[city].objetos);
+        file[city].situacao.push(...list[city].situacao);
+        file[city].datasAbertura.push(...list[city].situacao);
+        file[city].editais.push(...list[city].editais);
+        file[city].anexos.push(...list[city].anexos);
+        file[city].numEdital.push(...list[city].numEdital);
+
+        saveJSON(file, filename);
+    }else{
+        saveJSON(list, filename);
+    }
+}
+
 module.exports.getLondrinaBiddings = async () => {
     const page = await startPuppeteer("http://www1.londrina.pr.gov.br/sistemas/licita/index.php", "londrina");
 
-    try{
-        //Click on the first window (Abertas)
-        await page.waitForSelector(".small-box.bg-aqua .small-box-footer");
+    //Click on the first window (Abertas)
+    await page.waitForSelector(".small-box.bg-aqua .small-box-footer");
 
-        const saibaMaisButton = await page.$(".small-box.bg-aqua .small-box-footer");
+    const saibaMaisButton = await page.$(".small-box.bg-aqua .small-box-footer");
 
-        if(saibaMaisButton){
-            console.log("Clicado no botão de abertas".green);
-            await saibaMaisButton.click();
+    if(saibaMaisButton){
+        console.log("Clicado no botão de abertas".green);
+        await saibaMaisButton.click();
+
+        await page.waitForNavigation();
+
+        await page.waitForSelector('#filtroInterno input.botao');
+        const filtrarButton = await page.$('#filtroInterno input.botao')
+
+        if(filtrarButton){
+            console.log("Clicado no botão filtrar".green)
+            await filtrarButton.click();
+
+            const edital = {};
 
             await page.waitForNavigation();
 
-            await page.waitForSelector('#filtroInterno input.botao');
-            const filtrarButton = await page.$('#filtroInterno input.botao')
+            const elements = await page.$$("p");
 
-            if(filtrarButton){
-                console.log("Clicado no botão filtrar".green)
-                await filtrarButton.click();
+            console.log('Iniciando busca das licitações compativeis.');
 
-                await page.waitForNavigation();
+            //Used to map every element found and return into a array
+            const allBiddings = await getBiddingsFromElements(elements);
 
-                const elements = await page.$$("p");
+            var filteredBiddings = [];
 
-                console.log('Iniciando busca das licitações compativeis.');
+            filteredBiddings = await inspectBiddingsLondrina(allBiddings, tags, filteredBiddings);
 
-                //Used to map every element found and return into a array
-                const allBiddings = await getBiddingsFromElements(elements);
+            //Check if isn't already on the database
 
-                var filteredBiddings = [];
+            filteredBiddings = await compareDuplicatedBiddings(filteredBiddings, "londrina");
 
-                filteredBiddings = await inspectBiddings(allBiddings, tags, filteredBiddings);
+            if(filteredBiddings.length > 0){
+                console.log(`Licitações compativeis encontradas: ${filteredBiddings.length}`.green)
 
-                //Check if isn't already on the database
+                console.log('Salvando informações, por favor aguarde...');
 
-                filteredBiddings = await compareDuplicatedBiddings(filteredBiddings, "londrina");
+                const cidade = "londrina"
 
-                if(filteredBiddings.length > 0){
-                    console.log(`Licitações compativeis encontradas: ${filteredBiddings.length}`.green)
+                await gerarEdital(edital, cidade);
 
-                    console.log('Salvando informações, por favor aguarde...');
+                for(let item of filteredBiddings){
+                    const pregao = item.split('\n')[0];
 
-                    const cidade = "londrina"
+                    await page.waitForSelector('p');
 
-                    const edital = {};
+                    edital[cidade].objetos.push(item.split('\n')[1].split('Objeto: ')[1]);
+                    edital[cidade].situacao.push(item.split('\n')[2].split("Situação: ")[1]);
+                    edital[cidade].datasAbertura.push(item.split('\n')[3].split(" ")[1]);
+                    edital[cidade].numEdital.push(getNoticeNumber(item));
 
-                    await gerarEdital(edital, cidade);
+                    console.log("Buscando o edital do pregão " + pregao);
 
-                    for(let item of filteredBiddings){
-                        console.log(item);
-                        await page.waitForNavigation();
+                    //Find the correct button to get the notice
+                    const editalButton = await page.evaluateHandle((pregao) => {
+                        const buttons = Array.from(document.querySelectorAll('p > a'));
+                        return buttons.find(button => button.textContent === pregao);
+                    }, pregao);
 
-                        edital[cidade].objetos.push(item.split('\n')[1].split('Objeto: ')[1]);
-                        edital[cidade].situacao.push(item.split('\n')[2].split("Situação: ")[1]);
-                        edital[cidade].datasAbertura.push(item.split('\n')[3].split(" ")[1]);
-                        edital[cidade].numEdital.push(getNoticeNumber(item));
+                    console.log("Página do pregão encontrada! Clicando no botão".green);
+                    
+                    await editalButton.click();
 
-                        const pregao = item.split('\n')[0];
+                    try{
+                        await page.waitForSelector(".obs a", {timeout: 5000});
 
-                        //Find the correct button to get the notice
-                        const editalButton = await page.evaluateHandle((pregao) => {
-                            const buttons = Array.from(document.querySelectorAll('p > a'));
-                            return buttons.find(button => button.textContent === pregao);
-                        }, pregao);
-                        
-                        await editalButton.click();
-                        await page.waitForNavigation();
-
-                        console.log('bbbb');
+                        console.log('Buscando o link do edital...');
 
                         //Find the button that holds the link for anexo
                         const editalLink = await page.evaluateHandle(() => {
@@ -315,47 +337,47 @@ module.exports.getLondrinaBiddings = async () => {
                             return buttons.find(element => element.textContent.toLowerCase() === "edital e anexos");
                         });
 
-                        console.log("ccc")
-
-                        //retrive the link from a element
-                        if(editalLink){
-                            const link = await getLinkFromElements(editalLink)
-                        }
-
+                        const link = await getLinkFromElements(editalLink);
+                        console.log("Link do edital encontrado. Adicionando a lista".green);
                         edital[cidade].editais.push(link);
-                        edital[cidade].anexos.push("-");
-                        
-                        console.log(edital);
-
-                        const abertasButton = await page.$('.second-menu ul>li:nth-of-type(2) a');
-                        await abertasButton.click()
-
-                        await page.waitForNavigation();
-
-
-                        await page.waitForSelector('#filtroInterno input.botao');
-                        let filtrarBtn = await page.$('#filtroInterno input.botao');
-
-                        await filtrarBtn.click();
-                        await page.waitForNavigation();
+                    }catch{
+                        edital[cidade].editais.push('-');
+                        console.log("Link do edital não foi encontrado".red);
+                        writeErrorLog("londrina: Não foi possivel encontrar nenhum edital do pregão "+pregao)
                     }
 
-                    return console.log("Informações salvas com êxito (⌐■_■)");
+                    edital[cidade].anexos.push("-");
+                    
+                    console.log(edital);
 
-                }else{
-                    console.log(`Nenhuma licitação nova ou compatível encontrada ¯\\_(ツ)_/¯`);
+                    const abertasButton = await page.$('.second-menu ul>li:nth-of-type(2) a');
+                    await abertasButton.click()
+
+                    await page.waitForSelector('#filtroInterno input.botao');
+                    let filtrarBtn = await page.$('#filtroInterno input.botao');
+
+                    await filtrarBtn.click();
                 }
-            }
 
-        }else{
-            writeErrorLog('londrina: Não foi possível encontrar um botão de navegação, talvez o layout foi alterado.');
-            return console.log("Não encontrado botão, talvez o layout da pagina tenha alterado".red);
+                console.log("Informações salvas com êxito (⌐■_■)");
+
+                //Save all biddings retrieved
+                await saveBiddings(edital, cidade, 'history');
+                await saveBiddings(edital, cidade, 'database');
+
+                console.log("Fechando o navegador");
+                await browser.close();
+
+            }else{
+                console.log(`Nenhuma licitação nova ou compatível encontrada ¯\\_(ツ)_/¯`);
+
+                console.log("Fechando o navegador");
+                await browser.close();
+            }
         }
-    }catch(err){
-        writeErrorLog('londrina: Não foi possível navegar pela página, talvez a pagina tenha caido ou a conexão com a internet foi interrompida.\nError log:\n' + err)
-        console.error(err.red);
-    }finally{
-        console.log("Fechando o navegador");
-        await browser.close();
+
+    }else{
+        writeErrorLog('londrina: Não foi possível encontrar um botão de navegação, talvez o layout foi alterado.');
+        return console.log("Não encontrado botão, talvez o layout da pagina tenha alterado".red);
     }
 }

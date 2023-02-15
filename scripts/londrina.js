@@ -1,10 +1,10 @@
 const puppeteer = require("puppeteer");
 const fs = require('fs');
 const colors = require('colors');
-var browser;
+const {startPuppeteer} = require('./startPuppeteer');
 
 module.exports.getLondrinaBiddings = async () => {
-    const page = await startPuppeteer("http://www1.londrina.pr.gov.br/sistemas/licita/index.php", "londrina");
+    const {page,browser} = await startPuppeteer("http://www1.londrina.pr.gov.br/sistemas/licita/index.php", "londrina");
 
     //Click on the first window (Abertas)
     await page.waitForSelector(".small-box.bg-aqua .small-box-footer");

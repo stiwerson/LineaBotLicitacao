@@ -7,6 +7,7 @@ console.log('Iniciando busca por licitações.');
 async function getAll(){
     // await getLondrinaBiddings();
     // await getTemplate1Biddings('http://venus.maringa.pr.gov.br:8090/portaltransparencia/licitacoes','maringa');
+    console.log(getTags("./tags.txt"));
 }
 
 getAll();

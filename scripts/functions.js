@@ -1,93 +1,10 @@
 const puppeteer = require("puppeteer");
 const fs = require('fs');
-const { METHODS } = require("http");
-const Excel = require('exceljs');
 const colors = require('colors');
-var browser;
-
-const tags = 
-['Telas', 'Tela', 'Material pedagogico', 'Gerenciamento', 'Gerenciamento eletronico', 'Pedagogico', 'Acessibilidade', 'TV Escola', 'TV Prefeitura',
-'Lousa Digital', 'Totem', 'Totem de senha', 'Senha', 'Tela interativa', 'Touchscreen', 'Gestao de conteudos', 'eletronicos', 'eletronico', 'televisores',
- 'Display'];
+const {getTags} = require('./tags');
 
 //Number of tries if timeout
 const maxTries = 3;
-
-//Get all texts from URL using selectors
-const startPuppeteer = async function(url, siteName){
-    const texts = [];
-
-    //Loop used in case of timeout or unexpected errors
-    for(let tries = 0; tries < maxTries; tries++){
-        try{
-            console.log("Procurando as licitações.");
-            //Start Browser
-            browser = await puppeteer.launch({ args: [
-                '--disable-gpu',
-                '--disable-setuid-sandbox',
-                '--no-sandbox',
-                '--no-zygote'
-                ]});
-
-            console.log("Aberto o navegador.");
-
-            //Open new tab
-            const page = await browser.newPage();
-
-            console.log("Aberto uma nova aba");
-
-            //Go to location selected on param
-            await page.goto(url);
-
-            console.log("Indo ao site de " + siteName);
-
-            return page;
-
-        }catch(error){
-            console.error(`ERRO:\n ${error}.\n Tentando novamente.\n (Tentativas ${tries+1}/${maxTries})`);
-        }
-    }
-    await browser.close();
-    console.error(`Erro na busca após ${maxTries} tentativas.`);
-    writeErrorLog('Não foi possível logar no site de ' + siteName);
-}
-
-//Saves info in the JSON
-function saveJSON(obj, filename){
-    const json = JSON.stringify(obj);
-    
-    for(let tries = 0; tries < maxTries; tries++){
-        try{
-            fs.writeFile(`./arquivos/db/${filename}.json`, json, (err) => {
-                if (err){
-                    throw err
-                }else{
-                    console.log(`${filename}.json foi salvo com sucesso`);
-                }
-            });
-            break;
-        }catch(error){
-            console.error(`ERRO:\n ${error}.\n Tentando novamente.\n (Tentativas ${tries+1}/${maxTries})`);
-        }
-    }
-}
-
-//Get saved JSON
-function getJSON(filename){
-    const filepath = `./arquivos/db/${filename}.json`;
-    
-    return new Promise((resolve,reject) => {
-        fs.readFile(filepath, 'utf-8', (err, data)=>{
-            //If data not found returns a error on console log
-            if(data){
-                resolve(JSON.parse(data));
-            }else{
-                console.log(err);
-                resolve(undefined);
-            }
-        });
-    });
-}
 
 //Get the current date formated like dd/mm/yy
 function getCurrentDate() {

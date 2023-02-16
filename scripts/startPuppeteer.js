@@ -1,8 +1,10 @@
 const puppeteer = require("puppeteer");
+const {writeErrorLog} = require('./errorLogger');
 
 //Get all texts from URL using selectors
 module.exports.startPuppeteer = async function(url, siteName){
-    const texts = [];
+    //Number of tries if timeout
+    const maxTries = 3;
 
     //Loop used in case of timeout or unexpected errors
     for(let tries = 0; tries < maxTries; tries++){

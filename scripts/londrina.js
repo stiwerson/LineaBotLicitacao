@@ -2,6 +2,9 @@ const puppeteer = require("puppeteer");
 const fs = require('fs');
 const colors = require('colors');
 const {startPuppeteer} = require('./startPuppeteer');
+const {getBiddingsFromElements, inspectBiddingsLondrina, compareDuplicatedBiddings, getLinkFromElements, gerarEdital, saveBiddings, getNoticeNumber} = require('./functions');
+const {writeErrorLog} = require('./errorLogger');
+const {getTags} = require('./tags');
 
 module.exports.getLondrinaBiddings = async () => {
     const {page,browser} = await startPuppeteer("http://www1.londrina.pr.gov.br/sistemas/licita/index.php", "londrina");
@@ -18,10 +21,10 @@ module.exports.getLondrinaBiddings = async () => {
         await page.waitForNavigation();
 
         await page.waitForSelector('#filtroInterno input.botao');
-        const filtrarButton = await page.$('#filtroInterno input.botao')
+        const filtrarButton = await page.$('#filtroInterno input.botao');
 
         if(filtrarButton){
-            console.log("Clicado no botão filtrar".green)
+            console.log("Clicado no botão filtrar".green);
             await filtrarButton.click();
 
             const edital = {};
@@ -37,6 +40,15 @@ module.exports.getLondrinaBiddings = async () => {
 
             var filteredBiddings = [];
 
+            const tags = await getTags('./tags.txt')
+            .then(tags =>{
+                return tags;
+            })
+            .catch((error) =>{
+                console.log(error);
+                writeErrorLog('londrina: Não encontrado o arquivo Tags.txt\nError Log:\n'+error);
+            });
+
             filteredBiddings = await inspectBiddingsLondrina(allBiddings, tags, filteredBiddings);
 
             //Check if isn't already on the database
@@ -44,11 +56,11 @@ module.exports.getLondrinaBiddings = async () => {
             filteredBiddings = await compareDuplicatedBiddings(filteredBiddings, "londrina");
 
             if(filteredBiddings.length > 0){
-                console.log(`Licitações compativeis encontradas: ${filteredBiddings.length}`.green)
+                console.log(`Licitações compativeis encontradas: ${filteredBiddings.length}`.green);
 
                 console.log('Salvando informações, por favor aguarde...');
 
-                const cidade = "londrina"
+                const cidade = "londrina";
 
                 await gerarEdital(edital, cidade);
 
@@ -99,7 +111,7 @@ module.exports.getLondrinaBiddings = async () => {
                     console.log(edital);
 
                     const abertasButton = await page.$('.second-menu ul>li:nth-of-type(2) a');
-                    await abertasButton.click()
+                    await abertasButton.click();
 
                     await page.waitForSelector('#filtroInterno input.botao');
                     let filtrarBtn = await page.$('#filtroInterno input.botao');

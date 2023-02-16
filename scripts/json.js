@@ -2,11 +2,13 @@ const fs = require('fs');
 
 //Saves info in the JSON
 module.exports.saveJSON = (obj, filename) => {
+    const maxTries = 3;
     const json = JSON.stringify(obj);
+    const filepath = `./arquivos/db/${filename}.json`;
     
     for(let tries = 0; tries < maxTries; tries++){
         try{
-            fs.writeFile(`./arquivos/db/${filename}.json`, json, (err) => {
+            fs.writeFile(filepath, json, (err) => {
                 if (err){
                     throw err
                 }else{

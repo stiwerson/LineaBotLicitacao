@@ -1,48 +1,27 @@
 const puppeteer = require("puppeteer");
 const fs = require('fs');
 const colors = require('colors');
-const {getTags} = require('./tags');
+const {getJSON,saveJSON} = require('./json');
+const {getCurrentDate} = require('./dateGenerator');
+const { getTags, getStatus } = require("./tags");
+const { writeErrorLog } = require("./errorLogger");
 
-//Number of tries if timeout
-const maxTries = 3;
-
-//Get the current date formated like dd/mm/yy
-function getCurrentDate() {
-    const date = new Date();
-    const day = date.getDate();
-    const month = date.getMonth() + 1;
-    const year = date.getFullYear();
-    return `${day}.${month}.${year}`;
-}
-
-//Error log to register in arquivos/relatorios
-async function writeErrorLog(message){
-    const date = await getCurrentDate();
-    fs.appendFile(`./arquivos/relatorios/ERROR ${date}.txt`, message+'\n\n', (err) =>{
-        if(err){
-            console.log("Não foi possivel escrever o erro no log: " + err);
-        }else{
-            console.log("Erro registrado com sucesso no log.")
-        }
-    })
-}
-
-function removeAccents(str){
+module.exports.removeAccents = (str) => {
     return str.normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, " ").toLowerCase();
 }
 
 //List all biddings from elements
-async function getBiddingsFromElements(elem){
+module.exports.getBiddingsFromElements = async (elem) => {
     return await Promise.all(elem.map(item => item.evaluate(item => item.innerText)));
 }
 
 //Retrieve a link from a button (href)
-async function getLinkFromElements(elem){
+module.exports.getLinkFromElements = async (elem) =>{
     return await elem.evaluate(element => element.href);
 }
 
 //Check if theres a duplicate notice
-async function compareDuplicatedBiddings(list, city){
+module.exports.compareDuplicatedBiddings = async(list, city) =>{
     const history = await getJSON('history');
 
     let newList = [];
@@ -50,7 +29,7 @@ async function compareDuplicatedBiddings(list, city){
     if(history && list){
         const database = history[city].numEdital;
 
-        let allEditalNumbers = getNoticeNumber(list);
+        let allEditalNumbers = module.exports.getNoticeNumber(list);
 
         newList = allEditalNumbers.filter(item => !database.includes(item));
     }else{
@@ -61,7 +40,7 @@ async function compareDuplicatedBiddings(list, city){
 }
 
 //Regex to retrieve the notice number from a bidding
-function getNoticeNumber(biddings){
+module.exports.getNoticeNumber = (biddings) =>{
     const pattern = new RegExp(`\\d+/\\d+`);
     let noticeNumbers = [];
     let numberFound;
@@ -79,10 +58,40 @@ function getNoticeNumber(biddings){
     return noticeNumbers
 }
 
+//Inspect multiple text elements from a bidding and return the ones that are valid
+module.exports.inspectBiddings = async (biddings, status, object) =>{
+    const validTags = getTags('./tags.txt')
+    .then(tags => {return tags})
+    .catch(error => {
+        console.log("The file tags.txt wansn't found.");
+        writeErrorLog("The file tags.txt wansn't found.");
+    });
+
+    const validStatus = getStatus();
+
+    var validBiddings = [];
+
+    for(let i = 0; i < bidding.length;i++){
+        //Check the status of the biddings if still valid
+        const allStatus = await bidding[i].$eval(status, el => module.exports.removeAccents(el.innerText.trim().toLowerCase()));
+
+        if(validStatus.includes(allstatus)){
+            //Get all object description after checking for valid status options
+            const allObjects = await bidding[i].$eval(object, el => module.exports.removeAccents(el.getAttribute('text').trim().toLowerCase()));
+            if(validTags.some(validWord => allObjects.includes(validWord))){
+                validBiddings.push(biddings[i])
+            }
+        }
+
+
+    }
+    return validBiddings;
+};
+
 //Check which biddings are approved
-function inspectBiddingsLondrina(biddings, keywords, approvedBiddings){
+module.exports.inspectBiddingsLondrina = (biddings, keywords, approvedBiddings) =>{
     for(let bidding of biddings){
-        let wordsBidding = removeAccents(bidding.split('\n')[1]).split(/\W+/);
+        let wordsBidding = module.exports.removeAccents(bidding.split('\n')[1]).split(/\W+/);
 
         for(let word of wordsBidding){
             for(let keyword of keywords){
@@ -92,11 +101,10 @@ function inspectBiddingsLondrina(biddings, keywords, approvedBiddings){
             }
         }
     }
-
     return approvedBiddings;
 }
 
-function gerarEdital(edital, local){
+module.exports.gerarEdital = (edital, local) =>{
     edital[local] = {
         objetos: [],
         situacao: [],
@@ -107,7 +115,7 @@ function gerarEdital(edital, local){
     }
 }
 
-async function saveBiddings(list, city, filename){
+module.exports.saveBiddings = async (list, city, filename) => {
     const file = await getJSON(filename);
     const date = getCurrentDate();
 

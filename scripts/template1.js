@@ -4,7 +4,7 @@ const colors = require('colors');
 const {writeErrorLog} = require('./errorLogger');
 const {startPuppeteer} = require('./startPuppeteer');
 const {getTags,getStatus} = require('./tags');
-const {inspectBiddings} = require('./functions')
+const {inspectBiddingsT1, gerarEdital} = require('./functions')
 
 module.exports.getTemplate1Biddings = async (url, city) => {
     const {page,browser} = await startPuppeteer(url, city);
@@ -16,21 +16,31 @@ module.exports.getTemplate1Biddings = async (url, city) => {
 
     const allPages = await page.$$('.panel-pagination-inner li');
 
-    const numPages = allPages.length - 2;
+    const numPages = allPages.length - 5;
 
-    console.log(`A página de ${city} tem ${numPages} no total`.green);
+    console.log(`A página de ${city} tem ${numPages} páginas no total`.green);
 
     console.log('Começando a ler cada página.');
 
-    for(let i = 0;i<numPages;i++){
+    const edital = {};
+
+    //Read every page
+    for(let i = 0; i < numPages; i++){
         console.log(`Lendo a página ${currentPage}`.green);
 
-        const validBiddings = await inspectBiddings();
-        if(validBiddings > 0){
+        page.waitForSelector('tbody tr');
+        const allBiddings = await page.$$('tbody tr');
+
+        const validBiddings = await inspectBiddingsT1(allBiddings, '.coluna-5 span', '.coluna-8');
+
+        console.log(validBiddings);
+
+        if(validBiddings.length > 0){
 
         }
+
         else{
-            console.log("Nenhuma licitação nova ou compatível encontrada nesta página. ¯\\_(ツ)_/¯`")
+            console.log("Nenhuma licitação nova ou compatível encontrada nesta página. ¯\\_(ツ)_/¯`");
         }
     }
 

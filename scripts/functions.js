@@ -7,7 +7,13 @@ const { getTags, getStatus } = require("./tags");
 const { writeErrorLog } = require("./errorLogger");
 
 module.exports.removeAccents = (str) => {
-    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, " ").toLowerCase();
+    if (typeof str === "string") {
+        return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    } else if (Array.isArray(input)) {
+        return str.map(str => str.normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+    } else {
+        throw new Error("Input must be a string or an array of strings");
+    }
 }
 
 //List all biddings from elements
@@ -59,7 +65,7 @@ module.exports.getNoticeNumber = (biddings) =>{
 }
 
 //Inspect multiple text elements from a bidding and return the ones that are valid
-module.exports.inspectBiddings = async (biddings, status, object) =>{
+module.exports.inspectBiddingsT1 = async (biddings, status, object) =>{
     const validTags = getTags('./tags.txt')
     .then(tags => {return tags})
     .catch(error => {
@@ -71,15 +77,20 @@ module.exports.inspectBiddings = async (biddings, status, object) =>{
 
     var validBiddings = [];
 
-    for(let i = 0; i < bidding.length;i++){
+    for(let i = 0; i < biddings.length;i++){
         //Check the status of the biddings if still valid
-        const allStatus = await bidding[i].$eval(status, el => module.exports.removeAccents(el.innerText.trim().toLowerCase()));
+        var allStatus = await biddings[i].$eval(status, el => el.innerText.trim().toLowerCase());
+        allStatus = module.exports.removeAccents(allStatus);
 
-        if(validStatus.includes(allstatus)){
+        if(validStatus.includes(allStatus)){
             //Get all object description after checking for valid status options
-            const allObjects = await bidding[i].$eval(object, el => module.exports.removeAccents(el.getAttribute('text').trim().toLowerCase()));
+            var allObjects = await biddings[i].$eval(object, el => el.getAttribute('text').trim().toLowerCase());
+            allObjects = module.exports.removeAccents(allObjects);
+
+            console.log(allObjects);
+
             if(validTags.some(validWord => allObjects.includes(validWord))){
-                validBiddings.push(biddings[i])
+                validBiddings.push(biddings[i]);
             }
         }
 

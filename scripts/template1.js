@@ -22,7 +22,8 @@ module.exports.getTemplate1Biddings = async (url, city) => {
 
     console.log('Começando a ler cada página.');
 
-    const edital = {};
+    const edital = {}
+    gerarEdital(edital, city);
 
     //Read every page
     for(let i = 0; i < numPages; i++){
@@ -31,17 +32,65 @@ module.exports.getTemplate1Biddings = async (url, city) => {
         page.waitForSelector('tbody tr');
         const allBiddings = await page.$$('tbody tr');
 
-        const validBiddings = await inspectBiddingsT1(allBiddings, '.coluna-5 span', '.coluna-8');
+        //Get the ammount of avaliable biddings
+        var validBiddings = await inspectBiddingsT1(allBiddings, '.coluna-5 span', 'tbody .coluna-8', city);
 
-        console.log(validBiddings);
+        const biddingsToVerify = validBiddings.length;
 
-        if(validBiddings.length > 0){
+        if(biddingsToVerify > 0){
+            console.log(`Encontradas ${biddingsToVerify} licitações novas e compativeis na página ${currentPage}`.green);
 
+            //Read every bidding
+            for(let j = 0; j < biddingsToVerify; j++){
+                validBiddings = await inspectBiddingsT1(allBiddings, '.coluna-5 span', 'tbody .coluna-8', city);
+
+                console.log(validBiddings[j]);
+
+                //Add information to the edital
+                const objStr = await validBiddings[j].$eval('tbody .coluna-8', el => el.getAttribute('title'));
+                const sitStr = await validBiddings[j].$eval('tbody .coluna-5', el => el.innerText);
+                const datStr = await validBiddings[j].$eval('tbody .coluna-0', el => el.innerText);
+                const numStr = await validBiddings[j].$eval('tbody .coluna-2', el => el.innerText);
+
+                console.log("Anotando informações");
+
+                edital[city].objetos.push(objStr);
+                edital[city].situacao.push(sitStr);
+                edital[city].datasAbertura.push(datStr);
+                edital[city].numEdital.push(numStr);
+                edital[city].anexos.push('-');
+
+                //Get url for the edital
+                const button = await validBiddings[j].$('tbody .coluna-10 button');
+                console.log("Vou pegar o URL do edital");
+                await button.click();
+
+                console.log("Clicado no botão saber mais".green);
+                console.log("Aguardando pagina carregar.");
+
+                await page.waitForSelector('#nomeArquivo');
+
+                console.log("Pegando URL...");
+
+                const url = await page.url();
+
+                edital[city].edital.push(url);
+
+                console.log("URL registrado retornando a pagina inicial");
+
+                await page.goBack();
+
+                console.log("Aguardando a pagina carregar.");
+
+                await page.waitForSelector('.panel-pagination-inner li');
+
+                console.log("Começando novamente a pegar as informações");
+            }
         }
-
         else{
             console.log("Nenhuma licitação nova ou compatível encontrada nesta página. ¯\\_(ツ)_/¯`");
         }
+        console.log(edital);
     }
 
     console.log("Fechando o navegador!");

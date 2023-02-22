@@ -7,7 +7,7 @@ module.exports.getTags = (path) => {
         if (error) {
           reject(error);
         } else {
-          const tags = data.split(', ');
+          const tags = data.split(', ').map(word => word.toLowerCase());
           // Removes a \n on the last array element
           tags[tags.length - 1] = tags[tags.length - 1].trim();
           resolve(tags);

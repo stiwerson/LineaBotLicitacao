@@ -8,9 +8,9 @@ const { writeErrorLog } = require("./errorLogger");
 
 module.exports.removeAccents = (str) => {
     if (typeof str === "string") {
-        return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
     } else if (Array.isArray(input)) {
-        return str.map(str => str.normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+        return str.map(str => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase());
     } else {
         throw new Error("Input must be a string or an array of strings");
     }
@@ -65,15 +65,29 @@ module.exports.getNoticeNumber = (biddings) =>{
 }
 
 //Inspect multiple text elements from a bidding and return the ones that are valid
-module.exports.inspectBiddingsT1 = async (biddings, status, object) =>{
-    const validTags = getTags('./tags.txt')
-    .then(tags => {return tags})
+module.exports.inspectBiddingsT1 = async (biddings, status, object, city) =>{
+    const validTags = await getTags('./tags.txt')
+    .then(tags => {
+        return tags
+    })
     .catch(error => {
         console.log("The file tags.txt wansn't found.");
         writeErrorLog("The file tags.txt wansn't found.");
     });
 
     const validStatus = getStatus();
+
+    const numSelector = 'tbody .coluna-2';
+
+    //Get all edital numbers to verify
+    const allNumbers = await Promise.all(
+        biddings.map(async parentElement =>{
+            const childElement = await parentElement.$(numSelector);
+            return childElement ? childElement.evaluate(node => node.innerText) : '';
+        })
+    );
+
+    const validNumbers = await module.exports.compareDuplicatedBiddings(allNumbers,city);
 
     var validBiddings = [];
 
@@ -84,17 +98,20 @@ module.exports.inspectBiddingsT1 = async (biddings, status, object) =>{
 
         if(validStatus.includes(allStatus)){
             //Get all object description after checking for valid status options
-            var allObjects = await biddings[i].$eval(object, el => el.getAttribute('text').trim().toLowerCase());
+            var allObjects = await biddings[i].$eval(object, el => el.getAttribute('title').trim().toLowerCase());
             allObjects = module.exports.removeAccents(allObjects);
+            allObjects = allObjects.split(/[\s,]+/);
 
-            console.log(allObjects);
+            if (validTags.some(tag => allObjects.includes(tag.toLowerCase()))) {
+                var allBidNum = await biddings[i].$eval(numSelector, el => el.innerText.trim().toLowerCase());
+                allBidNum = module.exports.removeAccents(allBidNum);
+                allBidNum = allBidNum.split(/[\s,]+/);
 
-            if(validTags.some(validWord => allObjects.includes(validWord))){
-                validBiddings.push(biddings[i]);
+                if(validNumbers.some(num => allBidNum.includes(num))){
+                    validBiddings.push(biddings[i]);
+                }
             }
         }
-
-
     }
     return validBiddings;
 };

@@ -16,7 +16,7 @@ module.exports.getTemplate1Biddings = async (url, city) => {
 
     const allPages = await page.$$('.panel-pagination-inner li');
 
-    const numPages = allPages.length - 5;
+    const numPages = allPages.length - 2;
 
     console.log(`A página de ${city} tem ${numPages} páginas no total`.green);
 
@@ -62,7 +62,6 @@ module.exports.getTemplate1Biddings = async (url, city) => {
                 const button = await validBiddings[j].$('tbody .coluna-10 button');
                 console.log("Vou pegar o URL do edital");
 
-                console.log(button);
 
                 //Simulate button click for being a dynamic page created on react
                 await page.evaluate((btn) => {
@@ -89,30 +88,56 @@ module.exports.getTemplate1Biddings = async (url, city) => {
                 console.log("Aguardando a pagina carregar.");
 
                 await page.waitForSelector('.panel-pagination-inner li');
+                
+                let pageBtn;
 
                 //If this is the last bidding to check change the page
-                if(j === biddingsToVerify-1 && currentPage === 1){
+                if(j >= biddingsToVerify-1 && currentPage === 1){
                     currentPage++;
-                    const pageBtn = await page.$(`.panel-pagination-inner li:nth-of-type(${currentPage}) a`);
-                }else if(j === biddingsToVerify-1 && currentPage > 1){
+                    pageBtn = await page.$(`.panel-pagination-inner li:nth-of-type(${currentPage}) a`);
+                }else if(j >= biddingsToVerify-1 && currentPage > 1){
                     currentPage++;
-                    const pageBtn = await page.$(`.panel-pagination-inner li:nth-of-type(${currentPage+2}) a`);
-                }else if(currentPage > 1){
-                    const pageBtn = await page.$(`.panel-pagination-inner li:nth-of-type(${currentPage+2}) a`);
+                    pageBtn = await page.$(`.panel-pagination-inner li:nth-of-type(${currentPage+2}) a`);
+                }else if(currentPage > 1 ){
+                    pageBtn = await page.$(`.panel-pagination-inner li:nth-of-type(${currentPage+2}) a`);
+                }else{
+                    pageBtn = await page.$(`.panel-pagination-inner li:nth-of-type(${currentPage}) a`);
                 }
-
-                await page.evaluate((btn)=>{
-                    btn.click();
-                }, pageBtn);
-
-                await page.waitForTimeout(3000);
+                
+                //If needed to click on other page will do it
+                if(j >= biddingsToVerify-1 || currentPage > 1){
+                    await page.evaluate((btn)=>{
+                        btn.click();
+                    }, pageBtn);
+    
+                    await page.waitForTimeout(3000);
+                }
             }
             console.log(`Indo para a página ${currentPage}`.green);
         }
         else{
-            console.log("Nenhuma licitação nova ou compatível encontrada nesta página. ¯\\_(ツ)_/¯`");
+            console.log("Nenhuma licitação nova ou compatível encontrada na página "+currentPage+". ¯\\_(ツ)_/¯`");
+            //Case not found change page
+            if(currentPage !== numPages){
+                if(currentPage === 1){
+                    currentPage++;
+                    pageBtn = await page.$(`.panel-pagination-inner li:nth-of-type(${currentPage}) a`);
+                }else if(currentPage > 1){
+                    currentPage++;
+                    pageBtn = await page.$(`.panel-pagination-inner li:nth-of-type(${currentPage+2}) a`);
+                }
+                console.log(`Indo para a página ${currentPage}`.green);
+            }else{
+                console.log("Não há mais paginas restantes em "+city);
+            }
+
         }
-        console.log(edital);
+        //If is not empty save on history.json and database.json
+        if(edital[city]){
+            //Saves all the info
+            await saveBiddings(edital, city, 'history');
+            await saveBiddings(edital, city, 'database');
+        }
     }
 
     console.log("Fechando o navegador!");

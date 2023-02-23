@@ -44,8 +44,6 @@ module.exports.getTemplate1Biddings = async (url, city) => {
             for(let j = 0; j < biddingsToVerify; j++){
                 validBiddings = await inspectBiddingsT1(allBiddings, '.coluna-5 span', 'tbody .coluna-8', city);
 
-                console.log(validBiddings[j]);
-
                 //Add information to the edital
                 const objStr = await validBiddings[j].$eval('tbody .coluna-8', el => el.getAttribute('title'));
                 const sitStr = await validBiddings[j].$eval('tbody .coluna-5', el => el.innerText);
@@ -63,18 +61,26 @@ module.exports.getTemplate1Biddings = async (url, city) => {
                 //Get url for the edital
                 const button = await validBiddings[j].$('tbody .coluna-10 button');
                 console.log("Vou pegar o URL do edital");
-                await button.click();
+
+                console.log(button);
+
+                //Simulate button click for being a dynamic page created on react
+                await page.evaluate((btn) => {
+                    btn.click();
+                  }, button);
 
                 console.log("Clicado no botão saber mais".green);
                 console.log("Aguardando pagina carregar.");
 
-                await page.waitForSelector('#nomeArquivo');
+                await page.waitForTimeout(3000);
 
                 console.log("Pegando URL...");
 
                 const url = await page.url();
 
-                edital[city].edital.push(url);
+                console.log(url);
+
+                edital[city].editais.push(url);
 
                 console.log("URL registrado retornando a pagina inicial");
 
@@ -84,8 +90,24 @@ module.exports.getTemplate1Biddings = async (url, city) => {
 
                 await page.waitForSelector('.panel-pagination-inner li');
 
-                console.log("Começando novamente a pegar as informações");
+                //If this is the last bidding to check change the page
+                if(j === biddingsToVerify-1 && currentPage === 1){
+                    currentPage++;
+                    const pageBtn = await page.$(`.panel-pagination-inner li:nth-of-type(${currentPage}) a`);
+                }else if(j === biddingsToVerify-1 && currentPage > 1){
+                    currentPage++;
+                    const pageBtn = await page.$(`.panel-pagination-inner li:nth-of-type(${currentPage+2}) a`);
+                }else if(currentPage > 1){
+                    const pageBtn = await page.$(`.panel-pagination-inner li:nth-of-type(${currentPage+2}) a`);
+                }
+
+                await page.evaluate((btn)=>{
+                    btn.click();
+                }, pageBtn);
+
+                await page.waitForTimeout(3000);
             }
+            console.log(`Indo para a página ${currentPage}`.green);
         }
         else{
             console.log("Nenhuma licitação nova ou compatível encontrada nesta página. ¯\\_(ツ)_/¯`");

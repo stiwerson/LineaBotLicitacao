@@ -12,6 +12,7 @@
   "dependencies": {
     "colors": "^1.4.0",
     "exceljs": "^4.3.0",
-    "puppeteer": "^19.6.3"
+    "puppeteer": "^19.6.3",
+    "selenium-webdriver": "^4.8.1"
   }
 }

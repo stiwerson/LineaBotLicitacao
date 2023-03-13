@@ -32,7 +32,6 @@ module.exports.getJSON = (filename) => {
             if(data){
                 resolve(JSON.parse(data));
             }else{
-                console.log(err);
                 resolve(undefined);
             }
         });

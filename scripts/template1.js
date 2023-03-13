@@ -1,10 +1,8 @@
 const puppeteer = require("puppeteer");
-const fs = require('fs');
 const colors = require('colors');
 const {writeErrorLog} = require('./errorLogger');
 const {startPuppeteer} = require('./startPuppeteer');
-const {getTags,getStatus} = require('./tags');
-const {inspectBiddingsT1, gerarEdital} = require('./functions')
+const {inspectBiddingsT1, gerarEdital, saveBiddings} = require('./functions')
 
 module.exports.getTemplate1Biddings = async (url, city) => {
     const {page,browser} = await startPuppeteer(url, city);
@@ -16,7 +14,7 @@ module.exports.getTemplate1Biddings = async (url, city) => {
 
     const allPages = await page.$$('.panel-pagination-inner li');
 
-    const numPages = allPages.length - 2;
+    const numPages = allPages !== undefined ? allPages.length - 2 : 1;
 
     console.log(`A página de ${city} tem ${numPages} páginas no total`.green);
 
@@ -132,12 +130,13 @@ module.exports.getTemplate1Biddings = async (url, city) => {
             }
 
         }
-        //If is not empty save on history.json and database.json
-        if(edital[city]){
-            //Saves all the info
-            await saveBiddings(edital, city, 'history');
-            await saveBiddings(edital, city, 'database');
-        }
+    }
+
+    //If is not empty save on history.json and database.json
+    if(edital[city]){
+        //Saves all the info
+        await saveBiddings(edital, city, 'history');
+        await saveBiddings(edital, city, 'database');
     }
 
     console.log("Fechando o navegador!");

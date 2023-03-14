@@ -1,0 +1,41 @@
+Não foi possivel iniciar o selenium
+
+cascavel: Não foi possível acessar o site.
+Verifique se o site https://cascavel.atende.net/?pg=autoatendimento#!/tipo/servico/valor/8/padrao/1/load/1 esta fora do ar.
+Error Log:
+TypeError: Cannot read properties of undefined (reading 'get')
+
+Não foi possivel iniciar o selenium
+Error Log: Error: The specified executable path does not exist: /home/linea/Git/botLicitacao/scripts/chromium-web-driver/chromedriver
+
+cascavel: Não foi possível acessar o site.
+Verifique se o site https://cascavel.atende.net/?pg=autoatendimento#!/tipo/servico/valor/8/padrao/1/load/1 esta fora do ar.
+Error Log:
+TypeError: Cannot read properties of undefined (reading 'get')
+
+Não foi possivel iniciar o selenium
+Error Log: WebDriverError: unknown error: DevToolsActivePort file doesn't exist
+
+cascavel: Não foi possível acessar o site.
+Verifique se o site https://cascavel.atende.net/?pg=autoatendimento#!/tipo/servico/valor/8/padrao/1/load/1 esta fora do ar.
+Error Log:
+TypeError: Cannot read properties of undefined (reading 'get')
+
+Não foi possivel iniciar o selenium
+Error Log: WebDriverError: unknown error: Chrome failed to start: exited normally.
+  (unknown error: DevToolsActivePort file doesn't exist)
+  (The process started from chrome location /snap/bin/chromium is no longer running, so ChromeDriver is assuming that Chrome has crashed.)
+
+cascavel: Não foi possível acessar o site.
+Verifique se o site https://cascavel.atende.net/?pg=autoatendimento#!/tipo/servico/valor/8/padrao/1/load/1 esta fora do ar.
+Error Log:
+TypeError: Cannot read properties of undefined (reading 'get')
+
+Não foi possivel iniciar o selenium
+Error Log: WebDriverError: unknown error: DevToolsActivePort file doesn't exist
+
+cascavel: Não foi possível acessar o site.
+Verifique se o site https://cascavel.atende.net/?pg=autoatendimento#!/tipo/servico/valor/8/padrao/1/load/1 esta fora do ar.
+Error Log:
+TypeError: Cannot read properties of undefined (reading 'get')
+

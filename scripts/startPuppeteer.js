@@ -9,7 +9,7 @@ module.exports.startPuppeteer = async function(url, siteName){
     //Loop used in case of timeout or unexpected errors
     for(let tries = 0; tries < maxTries; tries++){
         try{
-            console.log("Abrindo puppeteer")
+            console.log("Abrindo puppeteer.")
             //Start Browser
             const browser = await puppeteer.launch({
                 headless: false,
